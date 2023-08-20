@@ -1,0 +1,23 @@
+model: "tic_hp"
+dataset: "flicker"
+dataset_path: "../flicker"
+kodak_path: "../kodak"
+epochs: 400
+learning_rate: 1.e-4
+num_workers: 4
+quality_level: 2 # {1,2,3,4}
+lmbda: 0.0035 # {0.0018, 0.0035, 0.0067, 0.013}
+batch_size: 4
+test_batch_size: 1
+aux_learning_rate: 1.e-3
+patch_size: 256
+cuda: True
+gpu_id: 0
+save: True
+clip_max_norm: 1.0
+root: '/home/yvonne/DLP/train'
+name: "name_TIC_hp"
+exp_name: "train0"
+seed: 42
+checkpoint: 
+TEST: False
