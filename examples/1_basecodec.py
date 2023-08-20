@@ -116,7 +116,7 @@ def init(args):
     os.makedirs(base_dir, exist_ok=True)
     experiment = Experiment(
         api_key="WrDZEHPnM21Lc9onPMIts7uUl",
-        project_name="tic-restormer2",
+        project_name="tic-restormer1",
         workspace="dlp-team24",
     )
     

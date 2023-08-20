@@ -263,7 +263,7 @@ def main(argv):
 
     kodak_dataset = ImageFolder(args.kodak_path, split='', transform=transforms.ToTensor())
     kodak_dataloader = DataLoader(kodak_dataset,batch_size=1,num_workers=args.num_workers,shuffle=False,pin_memory=(device == "cuda"),)
-    print(args)
+    
     net = image_models[args.model](quality=int(args.quality_level), prompt_config=args)
     net = net.to(device)
 
@@ -282,13 +282,6 @@ def main(argv):
             new_state_dict = OrderedDict()
             for k, v in checkpoint["state_dict"].items():
                 new_state_dict[k] = v
-
-        # for name, parm in net.named_parameters():
-        #     print(name, ": ", parm.shape)
-        # exit()
-        # for name, parm in new_state_dict.items():
-        #     print(name, ": ", parm.shape)
-        # exit()        
         net.load_state_dict(new_state_dict, strict=False)
 
     if args.cuda and torch.cuda.device_count() > 1:
