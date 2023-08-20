@@ -38,6 +38,7 @@ from compressai.models import (
     ScaleHyperprior,
     TIC_hp,
     TIC_PromptModel,
+    our_TIC,
 )
 
 from .pretrained import load_pretrained
@@ -51,6 +52,7 @@ __all__ = [
     "cheng2020_attn",
     'tic_hp',
     'tic_promptmodel',
+    "our_TIC",
 ]
 
 model_architectures = {
@@ -62,6 +64,7 @@ model_architectures = {
     "cheng2020-attn": Cheng2020Attention,
     "tic_hp": TIC_hp,
     'tic_promptmodel': TIC_PromptModel,
+    "our_TIC": our_TIC,
 }
 
 root_url = "https://compressai.s3.amazonaws.com/models/v1"
@@ -250,6 +253,16 @@ cfgs = {
         6: (192,),
     },
     'tic_hp': {
+        1: (128, 192),
+        2: (128, 192),
+        3: (128, 192),
+        4: (128, 192),
+        5: (192, 320),
+        6: (192, 320),
+        7: (192, 320),
+        8: (192, 320),
+    },
+    'our_TIC': {
         1: (128, 192),
         2: (128, 192),
         3: (128, 192),
@@ -453,6 +466,24 @@ def tic_hp(quality, metric="mse", pretrained=False, progress=True, **kwargs):
         raise ValueError(f'Invalid quality "{quality}", should be between (1, 8)')
 
     return _load_model("tic_hp", metric, quality, pretrained, progress, **kwargs)
+
+def our_TIC(quality, metric="mse", pretrained=False, progress=True, **kwargs):
+    r"""Neural image compression framework from Ming Lu and Zhan Ma
+    "High-Efficiency Lossy Image Coding Through Adaptive Neighborhood Information Aggregation"
+
+    Args:
+        quality (int): Quality levels (1: lowest, highest: 8)
+        metric (str): Optimized metric, choose from ('mse', 'ms-ssim')
+        pretrained (bool): If True, returns a pre-trained model
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    if metric not in ("mse", "ms-ssim"):
+        raise ValueError(f'Invalid metric "{metric}"')
+
+    if quality < 1 or quality > 8:
+        raise ValueError(f'Invalid quality "{quality}", should be between (1, 8)')
+
+    return _load_model("our_TIC", metric, quality, pretrained, progress, **kwargs)
 
 
 def tic_promptmodel(quality, metric="mse", pretrained=False, progress=True, **kwargs):
