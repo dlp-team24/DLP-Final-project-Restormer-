@@ -117,7 +117,7 @@ def init(args):
     experiment = Experiment(
         api_key="WrDZEHPnM21Lc9onPMIts7uUl",
         project_name="tic-restormer3",
-        workspace="dlp-team24"
+        workspace="dlp-team24",
         disabled=args.no_comet,
     )
             
