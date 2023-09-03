@@ -13,8 +13,10 @@ conda install -c conda-forge timm
 conda install -c conda-forge tqdm
 conda install -c conda-forge click
 python3.9 -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+conda install -c comet_ml comet_ml
+conda install -c conda-forge einops
 
-
+# original
 pip install -U pip
 pip install torch torchvision # have to match with the cuda version (we use 1.12.0+cu113)
 pip install pillow==9.2.0
