@@ -1236,7 +1236,6 @@ class TICwRSBwMLP_v2(nn.Module):
                                                    mlp_ratio=mlp_ratio,
                                                    drop=drop_rate,
                                                    act_layer=nn.GELU) for i in range(depths[3])])
-
         self.h_a0 = conv(M, N, kernel_size=3, stride=2)
         self.h_a1 = RSTB(dim=N,
                          input_resolution=(input_resolution[0]//32, input_resolution[1]//32),
