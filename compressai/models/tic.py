@@ -3,7 +3,7 @@ from click import prompt
 import torch
 import torch.nn as nn
 from compressai.entropy_models import EntropyBottleneck, GaussianConditional
-from compressai.layers import RSTB, MultistageMaskedConv2d, RestormerBlock,RestormerBlock2
+from compressai.layers import RSTB, MultistageMaskedConv2d, RestormerBlock, RestormerBlock2
 from timm.models.layers import trunc_normal_
 import torch.nn.functional as F
 from numpy import ceil
