@@ -38,7 +38,6 @@ import time
 import logging
 from datetime import datetime
 from comet_ml import Experiment
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -46,10 +45,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.utils import make_grid
-
 from compressai.datasets import ImageFolder
-from compressai.zoo import image_models
-
+from  compressai.zoo import image_models
+import compressai.zoo
 import yaml
 
 class RateDistortionLoss(nn.Module):
@@ -116,11 +114,10 @@ def init(args):
     os.makedirs(base_dir, exist_ok=True)
     experiment = Experiment(
         api_key="WrDZEHPnM21Lc9onPMIts7uUl",
-        project_name="tic-restormer3",
-        workspace="dlp-team24",
+        project_name="mlpv1",
+        workspace="dotori71",
         disabled=args.no_comet,
     )
-            
     experiment.set_name(f"{args.exp_name}_{args.quality_level}")
     experiment.log_parameters(vars(args))
     
