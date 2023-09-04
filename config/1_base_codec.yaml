@@ -17,7 +17,7 @@ save: True
 clip_max_norm: 1.0
 root: '/home/pc3395/mlpv1/Transformer_VariableROI/checkpoint'
 name: "NAME"
-exp_name: "mlpv1"
+exp_name: "mlpv2"
 seed: 42
 checkpoint: "/home/pc3395/mlpv1/TICwRSB_v1_4.pth.tar" 
 TEST: False 
