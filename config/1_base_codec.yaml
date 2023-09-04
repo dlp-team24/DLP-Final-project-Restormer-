@@ -1,24 +1,24 @@
-model: "tic_hp" # our_TIC
+model: "ticwrsbwmlp_v1"
 dataset: "flicker"
-dataset_path: "/disk2/dataset/flicker"
-kodak_path: "/disk2/dataset/kodak"
+dataset_path: "/work_e/flicker"
+kodak_path: '/work_e/TestImage/Kodak'
 epochs: 400
 learning_rate: 1.e-4
 num_workers: 4
-quality_level: 2 # {1,2,3,4}
-lmbda: 0.0035 # {0.0018, 0.0035, 0.0067, 0.013}
-batch_size: 8
+quality_level: 4 # {1,2,3,4}
+lmbda: 0.013 # {0.0018, 0.0035, 0.0067, 0.013}
+batch_size: 4
 test_batch_size: 1
 aux_learning_rate: 1.e-3
 patch_size: 256
 cuda: True
-gpu_id: 1
+gpu_id: 0
 save: True
 clip_max_norm: 1.0
-root: "/disk2/Team24_final_project/test"
-name: "TEST_q2"
-exp_name: "TEST_q2"
+root: '/home/pc3395/mlpv1/Transformer_VariableROI/checkpoint'
+name: "NAME"
+exp_name: "mlpv1"
 seed: 42
-checkpoint: "/disk2/Team24_final_project/base_codec_2.pth.tar"
-TEST: False
+checkpoint: "/home/pc3395/mlpv1/TICwRSB_v1_4.pth.tar" 
+TEST: False 
 no_comet: False
