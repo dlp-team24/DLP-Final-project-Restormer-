@@ -68,9 +68,9 @@ model_architectures = {
     "cheng2020-attn": Cheng2020Attention,
     "tic_hp": TIC_hp,
     'tic_promptmodel': TIC_PromptModel,
-    "TICwRSB_v1": TICwRSB_v1,
-    "TICwRSB_v2": TICwRSB_v2,
-    "TICwRSBwMLP_v1":TICwRSBwMLP_v1,
+    "ticwrsb_v1": TICwRSB_v1,
+    "ticwrsb_v2": TICwRSB_v2,
+    "ticwrsbwmlp_v1": TICwRSBwMLP_v1,
 }
 
 root_url = "https://compressai.s3.amazonaws.com/models/v1"
