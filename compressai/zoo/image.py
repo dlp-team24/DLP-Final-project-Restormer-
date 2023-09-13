@@ -42,6 +42,7 @@ from compressai.models import (
     TICwRSB_v2,
     TICwRSBwMLP_v1,
     TICwRSBwoMLP_v1,
+    TICwRSTB_RSBwMLP_v1,
 )
 
 from .pretrained import load_pretrained
@@ -58,7 +59,8 @@ __all__ = [
     "ticwrsb_v1",
     "ticwrsb_v2",
     "ticwrsbwmlp_v1",
-    "ticwrsbwomlp_v1"
+    "ticwrsbwomlp_v1",
+    "ticwrstb_rsbwmlp_v1",
 ]
 
 model_architectures = {
@@ -74,6 +76,7 @@ model_architectures = {
     "ticwrsb_v2": TICwRSB_v2,
     "ticwrsbwmlp_v1": TICwRSBwMLP_v1,
     "ticwrsbwomlp_v1": TICwRSBwoMLP_v1,
+    "ticwrstb_rsbwmlp_v1":TICwRSTB_RSBwMLP_v1,
 }
 
 root_url = "https://compressai.s3.amazonaws.com/models/v1"
@@ -302,6 +305,16 @@ cfgs = {
         8: (192, 320),
     },
     'ticwrsbwomlp_v1':{
+        1: (128, 192),
+        2: (128, 192),
+        3: (128, 192),
+        4: (128, 192),
+        5: (192, 320),
+        6: (192, 320),
+        7: (192, 320),
+        8: (192, 320),
+    },
+    'ticwrstb_rsbwmlp_v1':{
         1: (128, 192),
         2: (128, 192),
         3: (128, 192),
@@ -598,3 +611,20 @@ def ticwrsbwomlp_v1(quality, metric="mse", pretrained=False, progress=True, **kw
 
     return _load_model("ticwrsbwomlp_v1", metric, quality, pretrained, progress, **kwargs)
 
+def ticwrstb_rsbwmlp_v1(quality, metric="mse", pretrained=False, progress=True, **kwargs):
+    r"""Neural image compression framework from Ming Lu and Zhan Ma
+    "High-Efficiency Lossy Image Coding Through Adaptive Neighborhood Information Aggregation"
+
+    Args:
+        quality (int): Quality levels (1: lowest, highest: 8)
+        metric (str): Optimized metric, choose from ('mse', 'ms-ssim')
+        pretrained (bool): If True, returns a pre-trained model
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    if metric not in ("mse", "ms-ssim"):
+        raise ValueError(f'Invalid metric "{metric}"')
+
+    if quality < 1 or quality > 8:
+        raise ValueError(f'Invalid quality "{quality}", should be between (1, 8)')
+
+    return _load_model("ticwrstb_rsbwmlp_v1", metric, quality, pretrained, progress, **kwargs)
