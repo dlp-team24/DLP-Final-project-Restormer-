@@ -114,7 +114,7 @@ def init(args):
     os.makedirs(base_dir, exist_ok=True)
     experiment = Experiment(
         api_key="WrDZEHPnM21Lc9onPMIts7uUl",
-        project_name="wo-mlpv1-4",
+        project_name="rsbwmlp-v1-4",
         workspace="dotori71",
         disabled=args.no_comet,
     )
@@ -227,6 +227,7 @@ def test_epoch(epoch, test_dataloader, model, criterion, stage='val', tqdm_meter
     with torch.no_grad():
         for i,d in enumerate(test_dataloader):
             d = d.to(device)
+            print("rstgtsrygrththth:",d.shape)
             out_net = model(d)
             out_criterion = criterion(out_net, d, True)
 
