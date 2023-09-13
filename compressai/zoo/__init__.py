@@ -40,6 +40,7 @@ from .image import (
     ticwrsb_v2,
     ticwrsbwmlp_v1,
     ticwrsbwomlp_v1,
+    ticwrstb_rsbwmlp_v1,
 )
 
 from .pretrained import load_pretrained as load_state_dict
@@ -58,6 +59,7 @@ image_models = {
     'ticwrsb_v2': ticwrsb_v2,
     'ticwrsbwmlp_v1':ticwrsbwmlp_v1,
     'ticwrsbwomlp_v1':ticwrsbwomlp_v1,
+    "ticwrstb_rsbwmlp_v1":ticwrstb_rsbwmlp_v1,
     
 }
 
