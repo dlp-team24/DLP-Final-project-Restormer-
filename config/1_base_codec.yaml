@@ -1,7 +1,7 @@
-model: "ticwrsbwomlp_v1"
+model: "ticwrstb_rsbwmlp_v1" #"ticwrsbwmlp_v1" 
 dataset: "flicker"
-dataset_path: "/work_e/flicker"
-kodak_path: '/work_e/TestImage/Kodak'
+dataset_path: "/disk2/dataset/flicker"
+kodak_path: "/disk2/dataset/kodak"
 epochs: 400
 learning_rate: 1.e-4
 num_workers: 4
@@ -12,13 +12,13 @@ test_batch_size: 1
 aux_learning_rate: 1.e-3
 patch_size: 256
 cuda: True
-gpu_id: 0
+gpu_id: 1
 save: True
 clip_max_norm: 1.0
-root: '/home/pc3395/mlpv1/Transformer_VariableROI/checkpoint_womlpv1'
+root: "/disk2/TICwRSB/checkpoint_rstb_rsbwmlp_v1_4"
 name: "NAME"
-exp_name: "womlp_v1"
+exp_name: "rstb_rsbwmlp_v1_4"
 seed: 42
-checkpoint: "/home/pc3395/mlpv1/Transformer_VariableROI/checkpoint/mlpv1/4/checkpoint_best_loss.pth.tar" 
-TEST: False 
-no_comet: False
+checkpoint: "/disk2/TICwRSB/checkpoint_best_loss.pth.tar" 
+TEST: False
+no_comet: False 
