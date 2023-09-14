@@ -3,7 +3,7 @@ from click import prompt
 import torch
 import torch.nn as nn
 from compressai.entropy_models import EntropyBottleneck, GaussianConditional
-from compressai.layers import RSTB, MultistageMaskedConv2d, RestormerBlock, RestormerBlock2,RestormerBlock3,RSTB_RSBwMLP
+from compressai.layers import RSTB, MultistageMaskedConv2d, RestormerBlock, RestormerBlock2,RestormerBlock3,RSTB_RSBwMLP_a,RSTB_RSBwMLP_s
 from timm.models.layers import trunc_normal_
 import torch.nn.functional as F
 from numpy import ceil
@@ -1598,7 +1598,7 @@ class TICwRSTB_RSBwMLP_v1(nn.Module):
         )
         self.g_a6 = conv(N, M, kernel_size=3, stride=2)
         ####################
-        self.g_a7 = RSTB_RSBwMLP(dim=M,
+        self.g_a7 = RSTB_RSBwMLP_a(dim=M,
                         input_resolution=(input_resolution[0]//16, input_resolution[1]//16),
                         depth=depths[3],
                         num_heads=num_heads[3],
@@ -1675,7 +1675,7 @@ class TICwRSTB_RSBwMLP_v1(nn.Module):
         self.entropy_bottleneck = EntropyBottleneck(N)
         self.gaussian_conditional = GaussianConditional(None)
         ####################
-        self.g_s0 = RSTB_RSBwMLP(dim=M,
+        self.g_s0 = RSTB_RSBwMLP_s(dim=M,
                         input_resolution=(input_resolution[0]//16, input_resolution[1]//16),
                         depth=depths[2],
                         num_heads=num_heads[2],
