@@ -59,7 +59,8 @@ __all__ = [
     "RestormerBlock", 
     "RestormerBlock2",
     "RestormerBlock3",
-    "RSTB_RSBwMLP",
+    "RSTB_RSBwMLP_a",
+    "RSTB_RSBwMLP_s",
 ]
 ###Restormer
 from pdb import set_trace as stx
@@ -1284,7 +1285,7 @@ class BasicLayer(nn.Module):
         return flops
 
 
-class BasicLayer_wRSBwMLP(nn.Module):
+class BasicLayer_wRSBwMLP_a(nn.Module):
     """ A basic Swin Transformer layer for one stage.
     Args:
         dim (int): Number of input channels.
@@ -1449,7 +1450,169 @@ class BasicLayer_wRSBwMLP(nn.Module):
             flops += blk.flops()
         return flops
 
+class BasicLayer_wRSBwMLP_s(nn.Module):
+    """ A basic Swin Transformer layer for one stage.
+    Args:
+        dim (int): Number of input channels.
+        input_resolution (tuple[int]): Input resolution.
+        depth (int): Number of blocks.
+        num_heads (int): Number of attention heads.
+        window_size (int): Local window size.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
+        qkv_bias (bool, optional): If True, add a learnable bias to query, key, value. Default: True
+        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set.
+        drop (float, optional): Dropout rate. Default: 0.0
+        attn_drop (float, optional): Attention dropout rate. Default: 0.0
+        drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
+        norm_layer (nn.Module, optional): Normalization SwinTransformerBlocklayer. Default: nn.LayerNorm
+        use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
+    """
 
+    def __init__(self, dim, input_resolution, depth, num_heads, window_size,
+                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., norm_layer=nn.LayerNorm, use_checkpoint=False,
+                 block_module=SwinTransformerBlock,
+                 prompt_config=None):
+
+        super().__init__()
+        self.dim = dim
+        self.input_resolution = input_resolution
+        self.depth = depth
+        self.use_checkpoint = use_checkpoint
+
+        # build blocks
+        if prompt_config is not None:
+            self.use_prompt=True
+            self.prompt_config = prompt_config
+            self.prompt_dropout = nn.Dropout(prompt_config.DROPOUT)
+            
+            if prompt_config.WINDOW=='same':
+                self.blocks = nn.ModuleList([
+                    RestormerBlock2(
+                        dim=dim,
+                        num_heads=num_heads,
+                        bias=False,
+                        LayerNorm_type='WithBias',
+                        mlp_ratio=mlp_ratio,
+                        drop=0.,
+                        act_layer=nn.GELU
+                    )
+                    if i == 0 else block_module(
+                            prompt_config.NUM_TOKENS, prompt_config.LOCATION,
+                            dim=dim, input_resolution=input_resolution,
+                            num_heads=num_heads, window_size=window_size,
+                            shift_size=0 if (i % 2 == 0) else window_size // 2,
+                            mlp_ratio=mlp_ratio,
+                            qkv_bias=qkv_bias, qk_scale=qk_scale,
+                            drop=drop, attn_drop=attn_drop,
+                            drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,  # noqa
+                            norm_layer=norm_layer, prompt_deep =prompt_config.DEEP
+                            )
+                    for i in range(depth)
+                ])
+                            
+                if prompt_config.LOCATION != "prepend":
+                    raise NotImplementedError()
+                if prompt_config.INITIATION == "random":
+                    val = math.sqrt(6. / float(3 * reduce(mul, (1,1), 1) + dim))  # noqa
+
+                    # for "prepend"
+                    # prompt_depth = depth if prompt_config.DEEP else 1
+                    self.prompt_embeddings = nn.Parameter(torch.zeros(depth, prompt_config.NUM_TOKENS, dim))
+                    nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+            else:
+                raise NotImplementedError()
+            
+
+        else:
+            self.use_prompt=False
+            self.blocks = nn.ModuleList([
+                RestormerBlock2(
+                    dim=dim,
+                    num_heads=num_heads,
+                    bias=False,
+                    LayerNorm_type='WithBias',
+                    mlp_ratio=mlp_ratio,
+                    drop=0.,
+                    act_layer=nn.GELU
+                )
+                if i == 0 else block_module(
+                    dim=dim, input_resolution=input_resolution,
+                    num_heads=num_heads, window_size=window_size,
+                    shift_size=0 if (i % 2 == 0) else window_size // 2,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    drop=drop, attn_drop=attn_drop,
+                    drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
+                    norm_layer=norm_layer
+                )
+                for i in range(depth)
+            ])
+            
+            
+
+    def incorporate_prompt(self, x, cur_depth):
+        # combine prompt embeddings with image-patch embeddings
+        B = x.shape[0]
+
+        if self.prompt_config.LOCATION == "prepend" :
+            if cur_depth==0 or self.prompt_config.DEEP:
+                # after CLS token, all before image patches
+                # (batch_size, n_patches, hidden_dim)
+                prompt_embd = self.prompt_dropout(self.prompt_embeddings[cur_depth].expand(B, -1, -1))
+                x = torch.cat((prompt_embd, x), dim=1)
+                # (batch_size, n_prompt + n_patches, hidden_dim)
+            else:
+                prompt_embd = self.prompt_dropout(self.prompt_embeddings[cur_depth].expand(B, -1, -1))
+                prompt_embd = x[:,:self.prompt_config.NUM_TOKENS,:] + prompt_embd
+                x = torch.cat((prompt_embd, x[:,self.prompt_config.NUM_TOKENS:,:]), dim=1)
+        else:
+            raise ValueError("Other prompt locations are not supported")
+        
+        return x
+
+    def forward(self, x, x_size):
+        
+        attns = []
+        block_size=len(self.blocks)
+
+        for i, blk in enumerate(self.blocks):
+            #print(f"Module {i}:", blk)
+            if self.use_prompt and self.prompt_config.WINDOW=='same':
+                x = self.incorporate_prompt(x, i)
+            if self.use_checkpoint:
+                x = checkpoint.checkpoint(blk, x)
+            else:
+                if self.use_prompt and self.prompt_config.RETURN_ATTENTION:
+                    x, attn = blk(x, x_size)
+                    attns.append(attn)
+                else:
+                    if i==0:
+                        #print("i:",i,",xbefore.shape:",x.shape)
+                        size=x.shape
+                        x=x.reshape(size[0], size[2], x_size[0],x_size[1])
+                        #print("i:",i,",xafter.shape:",x.shape)
+                        x= blk(x)
+                        x=x.reshape(size)
+                    else:
+                        x, _ = blk(x, x_size)
+                        #print("x_size",x_size)
+                        attn = None
+                        attns.append(attn)
+                        #print("i:",i,",x.shape:",x.shape)
+        if self.use_prompt and not self.prompt_config.DEEP:
+            x = x[:, self.prompt_config.NUM_TOKENS:,:]
+        return x, attns
+
+    def extra_repr(self) -> str:
+        return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
+
+    def flops(self):
+        flops = 0
+        for blk in self.blocks:
+            flops += blk.flops()
+        return flops
+    
 class RSTB(nn.Module):
     """Residual Swin Transformer Block (RSTB).
     Args:
@@ -1527,7 +1690,7 @@ class RSTB(nn.Module):
         flops += self.patch_unembed.flops()
 
         return flops
-class RSTB_RSBwMLP(nn.Module):
+class RSTB_RSBwMLP_a(nn.Module):
     """Residual Swin Transformer Block (RSTB).
     Args:
         dim (int): Number of input channels.
@@ -1547,7 +1710,7 @@ class RSTB_RSBwMLP(nn.Module):
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm, use_checkpoint=False, prompt_config=None):
-        super(RSTB_RSBwMLP, self).__init__()
+        super(RSTB_RSBwMLP_a, self).__init__()
 
         self.dim = dim
         self.input_resolution = input_resolution
@@ -1560,7 +1723,7 @@ class RSTB_RSBwMLP(nn.Module):
             self.use_prompt=False
 
         if self.use_prompt:
-            self.residual_group = BasicLayer_wRSBwMLP(dim=dim,
+            self.residual_group = BasicLayer_wRSBwMLP_a(dim=dim,
                                             input_resolution=input_resolution,
                                             depth=depth,
                                             num_heads=num_heads,
@@ -1575,7 +1738,84 @@ class RSTB_RSBwMLP(nn.Module):
                                             prompt_config=prompt_config
                                             )
         else:
-            self.residual_group = BasicLayer_wRSBwMLP(dim=dim,
+            self.residual_group = BasicLayer_wRSBwMLP_a(dim=dim,
+                                            input_resolution=input_resolution,
+                                            depth=depth,
+                                            num_heads=num_heads,
+                                            window_size=window_size,
+                                            mlp_ratio=mlp_ratio,
+                                            qkv_bias=qkv_bias, qk_scale=qk_scale,
+                                            drop=drop, attn_drop=attn_drop,
+                                            drop_path=drop_path,
+                                            norm_layer=norm_layer,
+                                            use_checkpoint=use_checkpoint
+                                            )
+
+        self.patch_embed = PatchEmbed()
+        self.patch_unembed = PatchUnEmbed()
+
+
+    def forward(self, x, x_size):
+        out = self.patch_embed(x)
+        out, attns = self.residual_group(out, x_size)
+        return self.patch_unembed(out, x_size) + x, attns
+
+    def flops(self):
+        flops = 0
+        flops += self.residual_group.flops()
+        flops += self.patch_embed.flops()
+        flops += self.patch_unembed.flops()
+
+        return flops
+class RSTB_RSBwMLP_s(nn.Module):
+    """Residual Swin Transformer Block (RSTB).
+    Args:
+        dim (int): Number of input channels.
+        input_resolution (tuple[int]): Input resolution.
+        depth (int): Number of blocks.
+        num_heads (int): Number of attention heads.
+        window_size (int): Local window size.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
+        qkv_bias (bool, optional): If True, add a learnable bias to query, key, value. Default: True
+        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set.
+        drop (float, optional): Dropout rate. Default: 0.0
+        attn_drop (float, optional): Attention dropout rate. Default: 0.0
+        drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
+        norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
+        use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
+    """
+    def __init__(self, dim, input_resolution, depth, num_heads, window_size,
+                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., norm_layer=nn.LayerNorm, use_checkpoint=False, prompt_config=None):
+        super(RSTB_RSBwMLP_s, self).__init__()
+
+        self.dim = dim
+        self.input_resolution = input_resolution
+
+        if prompt_config is not None:
+            self.use_prompt=True
+            self.prompt_config = prompt_config
+            num_tokens = self.prompt_config.NUM_TOKENS
+        else:
+            self.use_prompt=False
+
+        if self.use_prompt:
+            self.residual_group = BasicLayer_wRSBwMLP_s(dim=dim,
+                                            input_resolution=input_resolution,
+                                            depth=depth,
+                                            num_heads=num_heads,
+                                            window_size=window_size,
+                                            mlp_ratio=mlp_ratio,
+                                            qkv_bias=qkv_bias, qk_scale=qk_scale,
+                                            drop=drop, attn_drop=attn_drop,
+                                            drop_path=drop_path,
+                                            norm_layer=norm_layer,
+                                            use_checkpoint=use_checkpoint,
+                                            block_module=PromptedSwinTransformerBlock,
+                                            prompt_config=prompt_config
+                                            )
+        else:
+            self.residual_group = BasicLayer_wRSBwMLP_s(dim=dim,
                                             input_resolution=input_resolution,
                                             depth=depth,
                                             num_heads=num_heads,
