@@ -1,3 +1,5 @@
+# Install
+```bash
 git clone --branch TICwRSBwMLP_v1 https://github.com/dlp-team24/DLP-Final-project-Restormer-
 
 cd DLP-Final-project-Restormer-
@@ -25,3 +27,4 @@ pip install shapely==1.7.1
 pip install -e .
 pip install timm tqdm click
 python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+```
